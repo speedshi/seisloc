@@ -1,0 +1,15 @@
+0              | migtp (integer): specify the migration method. 0 for MCM, 1 for conventional migration.
+2              | phasetp (integer): specify the phases used for migration. 0 for P-phase only, 1 for S-phase only, 2 for P+S-phases
+0              | cfuntp (integer): specify the datatype of characteristic function used for migration. 0 for original data, 1 for envelope, 2 for absolute value, 3 for non-negative value, 4 for square value. For other CFs such as STA/LTA or kurtosis, please pre-process the data.
+15             | nre (integer): number of stations or receivers.
+10000          | nsr (integer): number of imaging points or potential source locations.
+waveform.dat   | dfname (character): the filename of the input seismic data, do not exceed 20 characters.
+0.001          | dt (real): time sampling interval of the input seismic data in second (s).
+3600           | tdatal (real): time length of the whole seismic data in second (s).
+1              | tpwind (real): P-phase time window length in second (s) used for migration.
+1              | tswind (real): S-phase time window length in second (s) used for migration.
+0.1            | dt0 (real): time sampling interval of searching origin times in second (s).
+0.4            | vthrd (real): threshold value for identifying seismic event in the migration volume. For MCM, should between 0 and 1.
+2              | mcmdim (integer): the dimension of MCM, should >=2. Need this parameter when migtp is 0. For large arrays, do not exceed 5.
+200            | spaclim (real): the space limit in searching for potential seismic events, in meter (m).
+2              | timelim (real): the time limit in searching for potential seismic events, in second (s).
