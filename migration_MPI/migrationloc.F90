@@ -284,8 +284,13 @@ implicit none
 
       ! communication between processors
       ! processor 0 collect the parameters: nsevt and nenpro
-      call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
-      call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      if (irank/=0) then
+        call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      else
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      endif
 
     else
       ! use MPI on t0 or source grids
@@ -357,9 +362,15 @@ implicit none
 
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
-          call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          if (irank/=0) then
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          else
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          endif
 
         else
           ! MPI based on source grids
@@ -378,7 +389,11 @@ implicit none
 
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
-            call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            if (irank/=0) then
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            else
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            endif
             
             if (irank==0) then
               ! find potential source locations in 3D space domain for a particular origin time
@@ -488,8 +503,13 @@ implicit none
 
       ! communication between processors
       ! processor 0 collect the parameters: nsevt and nenpro
-      call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
-      call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      if (irank/=0) then
+        call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      else
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      endif
 
     else
       ! use MPI on t0 or source grids
@@ -561,9 +581,15 @@ implicit none
 
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
-          call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          if (irank/=0) then
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          else
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          endif
 
         else
           ! MPI based on source grids
@@ -582,7 +608,11 @@ implicit none
 
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
-            call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            if (irank/=0) then
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            else
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            endif
 
             if (irank==0) then
               ! find potential source locations in 3D space domain for a particular origin time
@@ -696,8 +726,13 @@ implicit none
 
       ! communication between processors
       ! processor 0 collect the parameters: nsevt and nenpro
-      call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
-      call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      if (irank/=0) then
+        call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      else
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      endif
 
     else
       ! use MPI on t0 or source grids
@@ -773,9 +808,15 @@ implicit none
 
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
-          call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          if (irank/=0) then
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          else
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          endif
 
         else
           ! MPI based on source grids
@@ -797,7 +838,11 @@ implicit none
 
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
-            call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            if (irank/=0) then
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            else
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            endif
 
             if (irank==0) then
               ! find potential source locations in 3D space domain for a particular origin time
@@ -911,8 +956,13 @@ implicit none
 
       ! communication between processors
       ! processor 0 collect the parameters: nsevt and nenpro
-      call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
-      call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      if (irank/=0) then
+        call MPI_GATHERV(nsevt(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(nenpro(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      else
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nsevt,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+        call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,nenpro,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+      endif
 
     else
       ! use MPI on t0 or source grids
@@ -988,9 +1038,15 @@ implicit none
 
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
-          call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
-          call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          if (irank/=0) then
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          else
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD)
+            call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD)
+          endif
 
         else
           ! MPI based on source grids
@@ -1012,7 +1068,11 @@ implicit none
 
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
-            call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            if (irank/=0) then
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            else
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD)
+            endif
 
             if (irank==0) then
               ! find potential source locations in 3D space domain for a particular origin time
