@@ -15,13 +15,15 @@ implicit none
   real(kind=RLP),allocatable,dimension(:)   :: st0,btime,tvtn,tvpn,tvsn,migvol_3d,pst0,seisinfo,eventsloc
   logical                                   :: alive,ldparal,t0paral
 
-  ! start timing. Wall-clock time, program must run in the same month
-  call date_and_time(values=time_array_s)
-
-  ! Start MPI parallel
+  ! Start MPI parallel, obtain the number of processors and the rank of each processor
   call MPI_INIT(ierror)
   call MPI_COMM_SIZE(MPI_COMM_WORLD,npsize,ierror)
   call MPI_COMM_RANK(MPI_COMM_WORLD,irank,ierror)
+
+  if (irank==0) then
+    ! start timing. Wall-clock time, program must run in the same month
+    call date_and_time(values=time_array_s)
+  endif
 
   ! set or create the folder name for input and output
   infname="./data/"
@@ -1120,47 +1122,54 @@ implicit none
     deallocate(travelp,travels,tvpn,tvsn,pwfex,swfex)
   endif
 
-  ! End MPI parallel
-  call MPI_FINALIZE(ierror)
+  if (irank==0) then
+    ! the main/root processor load results of all data segments and combine them to form the final results
+    nsemax=MAXVAL(nsevt)
+    allocate(seiseloc(5*nsemax,nloadd))
+    seiseloc=0
+    do iload=1,nloadd
+      if (nsevt(iload)>0) then
+        write(opname,*) iload
+        open(unit=666,file=TRIM(outfname)//TRIM(ADJUSTL(opname)),form='unformatted',status='old',access='stream',action='read')
+        read(666) seiseloc(1:(5*nsevt(iload)),iload)
+        close(unit=666)
+      endif
+    enddo
 
-  ! load results of all data segments and combine them to form the final results
-  nsemax=MAXVAL(nsevt)
-  allocate(seiseloc(5*nsemax,nloadd))
-  seiseloc=0
-  do iload=1,nloadd
-    if (nsevt(iload)>0) then
-      write(opname,*) iload
-      open(unit=666,file=TRIM(outfname)//TRIM(ADJUSTL(opname)),form='unformatted',status='old',access='stream',action='read')
-      read(666) seiseloc(1:(5*nsevt(iload)),iload)
-      close(unit=666)
+    !re-process some seismic events
+    nseall=SUM(nsevt)
+    allocate(eventsloc(5*nseall))
+    if (nloadd>1) then
+      ! more than one data segment
+      CALL evprocesst(nsemax,nloadd,seiseloc,nsevt,nenpro,spaclim,timelim,nnse,nseall,eventsloc)
+    else
+      ! only one data segment
+      nnse=nseall
+      eventsloc=seiseloc(:,1)
     endif
-  enddo
 
-  !re-process some seismic events
-  nseall=SUM(nsevt)
-  allocate(eventsloc(5*nseall))
-  if (nloadd>1) then
-    ! more than one data segment
-    CALL evprocesst(nsemax,nloadd,seiseloc,nsevt,nenpro,spaclim,timelim,nnse,nseall,eventsloc)
+    ! output the final results
+    open(unit=100,file=TRIM(outfname)//'event_location.dat',form='formatted',status='replace',action='write')
+    write(unit=100,fmt="(I8)") nnse
+    do id=1,nnse
+      write(unit=100,fmt="(5(2XF18.6))") eventsloc((5*id-4):(5*id))
+    enddo
+    close(unit=100)
+
+    deallocate(nsevt,nenpro,seiseloc,eventsloc)
+
+    ! end timing
+    call date_and_time(values=time_array_e)
+    twallc=(time_array_e(3)-time_array_s(3))*24*3600+(time_array_e(5)-time_array_s(5))*3600+(time_array_e(6)-time_array_s(6))*60+(time_array_e(7)-time_array_s(7))+0.001*(time_array_e(8)-time_array_s(8))
+    write(*,*) "Program running time:", twallc, "second."
+
   else
-    ! only one data segment
-    nnse=nseall
-    eventsloc=seiseloc(:,1)
+    ! all other processors clear memory and wait to quit the MPI
+    deallocate(nsevt,nenpro)
+
   endif
 
-  ! output the final results
-  open(unit=100,file=TRIM(outfname)//'event_location.dat',form='formatted',status='replace',action='write')
-  write(unit=100,fmt="(I8)") nnse
-  do id=1,nnse
-    write(unit=100,fmt="(5(2XF18.6))") eventsloc((5*id-4):(5*id))
-  enddo
-  close(unit=100)
-
-  deallocate(nsevt,nenpro,seiseloc,eventsloc)
-
-  ! end timing
-  call date_and_time(values=time_array_e)
-  twallc=(time_array_e(3)-time_array_s(3))*24*3600+(time_array_e(5)-time_array_s(5))*3600+(time_array_e(6)-time_array_s(6))*60+(time_array_e(7)-time_array_s(7))+0.001*(time_array_e(8)-time_array_s(8))
-  write(*,*) "Program running time:", twallc, "second."
+  ! End MPI parallel
+  call MPI_FINALIZE(ierror)  
 
 end program migrationloc
