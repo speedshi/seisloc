@@ -50,6 +50,7 @@ implicit none
   read(100,*) mcmdim
   read(100,*) spaclim
   read(100,*) timelim
+  read(100,*) nssot
   close(unit=100)
  
   ! determine the number of time points for the whole seismic data
@@ -135,8 +136,10 @@ implicit none
     endif
   endif
   
-  ! set the maximum number of potential seismic events for a single origin time.
-  nssot=100
+  ! check the maximum number of potential seismic events for a single origin time.
+  if (nssot<1) then
+    nssot=100
+  endif
   ! set the number of time points for loading in the data per time. For very large dataset, we need to load and process segment data many times.
   ! For 250 station, single precision, nt=10^6, the memory cost of the data is about 1G.
   nt=1000000

@@ -13,3 +13,4 @@ waveform.dat   | dfname (character): the filename of the input seismic data, do 
 2              | mcmdim (integer): the dimension of MCM, should >=2. Need this parameter when migtp is 0. For large arrays, do not exceed 5.
 200            | spaclim (real): the space limit in searching for potential seismic events, in meter (m).
 2              | timelim (real): the time limit in searching for potential seismic events, in second (s).
+1              | nssot (integer): the maximum number of potential seismic events can be accept for a single origin time. If it is less then 0, then use default value: 100.
