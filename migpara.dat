@@ -9,7 +9,7 @@ waveform.dat   | dfname (character): the filename of the input seismic data, do 
 1              | tpwind (real): P-phase time window length in second (s) used for migration.
 1              | tswind (real): S-phase time window length in second (s) used for migration.
 0.1            | dt0 (real): time sampling interval of searching origin times in second (s).
-0.4            | vthrd (real): threshold value for identifying seismic event in the migration volume. For MCM, should between 0 and 1.
+0.4            | vthrd (real): threshold value for identifying seismic event in the migration volume. For MCM, should between 0 and 1. If vthrd<=0, using adaptive threshold: mean+3*std; if vthrd>1, using threshold as: mean+vthrd*std.
 2              | mcmdim (integer): the dimension of MCM, should >=2. Need this parameter when migtp is 0. For large arrays, do not exceed 5.
 200            | spaclim (real): the space limit in searching for potential seismic events, in meter (m).
 2              | timelim (real): the time limit in searching for potential seismic events, in second (s).

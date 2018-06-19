@@ -17,13 +17,27 @@ use paramod
 implicit none
 
   integer(kind=INP),intent(in)  :: nsr,nssot
-  real(kind=RLP),intent(in)     :: vthrd,spaclim,migvol_3d(nsr),soupos(nsr,3)
+  real(kind=RLP),intent(inout)  :: vthrd
+  real(kind=RLP),intent(in)     :: spaclim,migvol_3d(nsr),soupos(nsr,3)
   integer(kind=INP),intent(out) :: npsit
   real(kind=RLP),intent(out)    :: event_sp(3*nssot),event_mv(nssot)
   integer(kind=INP)             :: nseis,id,ii,pflag
-  real(kind=RLP)                :: pepos(3),dist
+  real(kind=RLP)                :: pepos(3),dist,mmean,mstd
   integer(kind=INP),allocatable :: indx(:)
   real(kind=RLP),allocatable    :: mvseis(:),spseis(:,:)
+
+  ! check and set the threshold value
+  if (vthrd>1 .OR. vthrd<1E-5) then
+    mmean=SUM(migvol_3d)/nsr
+    mstd=SQRT(SUM((migvol_3d-mmean)**2)/(nsr-1.0))
+    if (vthrd<1E-5) then
+      ! adaptive threshold
+      vthrd=mmean+3.0*mstd
+    else
+      ! user defined threshold
+      vthrd=mmean+vthrd*mstd
+    endif
+  endif
 
   npsit=0
   event_sp=0
