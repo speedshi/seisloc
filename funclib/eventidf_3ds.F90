@@ -6,7 +6,8 @@ subroutine eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp,event_
 ! 'nsr': totoal number of searching source points.
 ! 'migvol_3d': migration volume of all source points for a particular searching origin time, nsr*1.
 ! 'soupos': spatial positions of all source points, X-Y-Z (m), nsr*3.
-! 'vthrd': threshold value for pick seismic events in the migration volume, >= vthrd are viewed as potential seismic events.
+! 'vthrd': used to set threshold value (veset) for pick seismic events in the migration volume, migration_value>=veset are viewed as potential seismic events.
+!  If 0<vthrd<1, veset=vthrd; if vthrd<=0, veset=mean+3*std; if vthrd>=1, veset=mean+vthrd*std.
 ! 'spaclim': spatial limit to restrict identifying too close seismic events in space.
 ! 'nssot': the maximum number of seismic events we can identified in the migration volume.
 ! Output:--------------------------------------------------------------------------------
@@ -17,26 +18,28 @@ use paramod
 implicit none
 
   integer(kind=INP),intent(in)  :: nsr,nssot
-  real(kind=RLP),intent(inout)  :: vthrd
-  real(kind=RLP),intent(in)     :: spaclim,migvol_3d(nsr),soupos(nsr,3)
+  real(kind=RLP),intent(in)     :: vthrd,spaclim,migvol_3d(nsr),soupos(nsr,3)
   integer(kind=INP),intent(out) :: npsit
   real(kind=RLP),intent(out)    :: event_sp(3*nssot),event_mv(nssot)
   integer(kind=INP)             :: nseis,id,ii,pflag
-  real(kind=RLP)                :: pepos(3),dist,mmean,mstd
+  real(kind=RLP)                :: pepos(3),dist,mmean,mstd,veset
   integer(kind=INP),allocatable :: indx(:)
   real(kind=RLP),allocatable    :: mvseis(:),spseis(:,:)
 
   ! check and set the threshold value
-  if (vthrd>1 .OR. vthrd<1E-5) then
+  if (vthrd>0 .OR. vthrd<1) then
+    ! user defined threshold value, between 0 and 1
+    veset=vthrd
+  elseif (vthrd<=0) then
+    ! adaptive threshold, use predefined default outlier indication
     mmean=SUM(migvol_3d)/nsr
     mstd=SQRT(SUM((migvol_3d-mmean)**2)/(nsr-1.0))
-    if (vthrd<1E-5) then
-      ! adaptive threshold
-      vthrd=mmean+3.0*mstd
-    else
-      ! user defined threshold
-      vthrd=mmean+vthrd*mstd
-    endif
+    veset=mmean+3.0*mstd
+  else
+    ! adaptive threshold, use user defined outlier indication
+    mmean=SUM(migvol_3d)/nsr
+    mstd=SQRT(SUM((migvol_3d-mmean)**2)/(nsr-1.0))
+    veset=mmean+vthrd*mstd
   endif
 
   npsit=0
@@ -44,7 +47,7 @@ implicit none
   event_mv=0
 
   ! caculate the number of potential seismic events above the pre-set threshold.
-  nseis=COUNT(migvol_3d>=vthrd)
+  nseis=COUNT(migvol_3d>=veset)
   if (nseis==0) then
     ! migration values of all grid positions are below threshold, no seismic event.
     RETURN
@@ -52,7 +55,7 @@ implicit none
     allocate(mvseis(nseis),spseis(nseis,3),indx(nseis))
     ii=1
     do id=1,nsr
-      if (migvol_3d(id)>=vthrd) then
+      if (migvol_3d(id)>=veset) then
         mvseis(ii)=migvol_3d(id)
         spseis(ii,:)=soupos(id,:)
         ii=ii+1
