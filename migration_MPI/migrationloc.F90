@@ -127,12 +127,11 @@ implicit none
       migplan=3
       ! calculate the number of effective station groups used in the migration
       CALL combnum(nre,mcmdim,ncoe)
-      ncoe=2*ncoe
     else
       ! using both P- and S-phases and conventional DSI
       migplan=4
       ! calculate the number of effective stations used in the migration
-      ncoe=2*REAL(nre)
+      ncoe=REAL(nre)
     endif
   endif
   
@@ -260,8 +259,8 @@ implicit none
               wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
             endforall
             ! calculate the stacking value of this imaging point
-            CALL stkcorrcoef(ntwd,nre,wfex,stkv)
-            migvol_3d(id)=stkv/ncoe
+            CALL stkcorrcoef(ntwd,nre,wfex,ncoe,stkv)
+            migvol_3d(id)=stkv
           enddo
           ! find potential source locations in 3D space domain for a particular origin time
           CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -358,8 +357,8 @@ implicit none
                 wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntwd,nre,wfex,stkv)
-              migvol_3d(id)=stkv/ncoe
+              CALL stkcorrcoef(ntwd,nre,wfex,ncoe,stkv)
+              migvol_3d(id)=stkv
             enddo
             ! find potential source locations in 3D space domain for a particular origin time
             CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -388,8 +387,8 @@ implicit none
                 wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntwd,nre,wfex,stkv)
-              migvol_3d(id)=stkv/ncoe
+              CALL stkcorrcoef(ntwd,nre,wfex,ncoe,stkv)
+              migvol_3d(id)=stkv
             enddo
 
             ! communication between processors
@@ -479,8 +478,8 @@ implicit none
               wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
             endforall
             ! calculate the stacking value of this imaging point
-            stkv=SUM(wfex)
-            migvol_3d(id)=stkv/ncoe
+            stkv=SUM(wfex)/ncoe
+            migvol_3d(id)=stkv
           enddo
           ! find potential source locations in 3D space domain for a particular origin time
           CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -577,8 +576,8 @@ implicit none
                 wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              stkv=SUM(wfex)
-              migvol_3d(id)=stkv/ncoe
+              stkv=SUM(wfex)/ncoe
+              migvol_3d(id)=stkv
             enddo
             ! find potential source locations in 3D space domain for a particular origin time
             CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -607,8 +606,8 @@ implicit none
                 wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              stkv=SUM(wfex)
-              migvol_3d(id)=stkv/ncoe
+              stkv=SUM(wfex)/ncoe
+              migvol_3d(id)=stkv
             enddo
 
             ! communication between processors
@@ -701,9 +700,9 @@ implicit none
               swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
             endforall
             ! calculate the stacking value of this imaging point
-            CALL stkcorrcoef(ntpwd,nre,pwfex,stkp)
-            CALL stkcorrcoef(ntswd,nre,swfex,stks)
-            migvol_3d(id)=(stkp+stks)/ncoe
+            CALL stkcorrcoef(ntpwd,nre,pwfex,ncoe,stkp)
+            CALL stkcorrcoef(ntswd,nre,swfex,ncoe,stks)
+            migvol_3d(id)=0.5*(stkp+stks)
           enddo
           ! find potential source locations in 3D space domain for a particular origin time
           CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -803,9 +802,9 @@ implicit none
                 swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntpwd,nre,pwfex,stkp)
-              CALL stkcorrcoef(ntswd,nre,swfex,stks)
-              migvol_3d(id)=(stkp+stks)/ncoe
+              CALL stkcorrcoef(ntpwd,nre,pwfex,ncoe,stkp)
+              CALL stkcorrcoef(ntswd,nre,swfex,ncoe,stks)
+              migvol_3d(id)=0.5*(stkp+stks)
             enddo
             ! find potential source locations in 3D space domain for a particular origin time
             CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -836,9 +835,9 @@ implicit none
                 swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntpwd,nre,pwfex,stkp)
-              CALL stkcorrcoef(ntswd,nre,swfex,stks)
-              migvol_3d(id)=(stkp+stks)/ncoe
+              CALL stkcorrcoef(ntpwd,nre,pwfex,ncoe,stkp)
+              CALL stkcorrcoef(ntswd,nre,swfex,ncoe,stks)
+              migvol_3d(id)=0.5*(stkp+stks)
             enddo
 
             ! communication between processors
@@ -931,9 +930,9 @@ implicit none
               swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
             endforall
             ! calculate the stacking value of this imaging point
-            stkp=SUM(pwfex)
-            stks=SUM(swfex)
-            migvol_3d(id)=(stkp+stks)/ncoe
+            stkp=SUM(pwfex)/ncoe
+            stks=SUM(swfex)/ncoe
+            migvol_3d(id)=0.5*(stkp+stks)
           enddo
           ! find potential source locations in 3D space domain for a particular origin time
           CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -1033,9 +1032,9 @@ implicit none
                 swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              stkp=SUM(pwfex)
-              stks=SUM(swfex)
-              migvol_3d(id)=(stkp+stks)/ncoe
+              stkp=SUM(pwfex)/ncoe
+              stks=SUM(swfex)/ncoe
+              migvol_3d(id)=0.5*(stkp+stks)
             enddo
             ! find potential source locations in 3D space domain for a particular origin time
             CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
@@ -1066,9 +1065,9 @@ implicit none
                 swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              stkp=SUM(pwfex)
-              stks=SUM(swfex)
-              migvol_3d(id)=(stkp+stks)/ncoe
+              stkp=SUM(pwfex)/ncoe
+              stks=SUM(swfex)/ncoe
+              migvol_3d(id)=0.5*(stkp+stks)
             enddo
 
             ! communication between processors

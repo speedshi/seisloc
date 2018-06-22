@@ -8,9 +8,9 @@ implicit none
   integer(kind=INP) :: iload,idxt,id,it,ir,ii,jj,dimloadd(2),ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
   integer(kind=INP) :: time_array_s(8), time_array_e(8)
   character(20)     :: dfname,opname,infname,outfname
-  real(kind=RLP)    :: dt,tdatal,tpwind,tswind,dt0,vthrd,ncoe,stkv,stkp,stks,spaclim,timelim,twallc
+  real(kind=RLP)    :: dt,tdatal,tpwind,tswind,dt0,vthrd,ncoe,stkv,stkz,stkn,stke,spaclim,timelim,twallc
   integer(kind=INP),allocatable             :: s0idsg(:),npsit(:),nsevt(:),nenpro(:)
-  real(kind=RLP),allocatable,dimension(:,:) :: soupos,travelt,travelp,travels,sdatain,wfdata,wfex,pwfex,swfex,event_sp,event_mv,seiseloc
+  real(kind=RLP),allocatable,dimension(:,:) :: soupos,travelt,travelp,travels,zsdatain,nsdatain,esdatain,zwfdata,nwfdata,ewfdata,wfex,zwfex,nwfex,ewfex,event_sp,event_mv,seiseloc
   real(kind=RLP),allocatable,dimension(:)   :: st0,btime,tvtn,tvpn,tvsn,migvol_3d,pst0,seisinfo,eventsloc
   logical                                   :: alive
 
@@ -105,7 +105,7 @@ implicit none
     endif
   else
     ! both P- and S-phases are used in the migration
-    allocate(travelp(nsr,nre),travels(nsr,nre),tvpn(nre),tvsn(nre),pwfex(ntpwd,nre),swfex(ntswd,nre))
+    allocate(travelp(nsr,nre),travels(nsr,nre),tvpn(nre),tvsn(nre),zwfex(ntpwd,nre),nwfex(ntswd,nre),ewfex(ntswd,nre))
     ! load the travetime tables of P- and S-phases
     open(unit=11,file=TRIM(infname)//'travelp.dat',form='unformatted',status='old',access='stream',action='read')
     read(11) travelp
@@ -115,7 +115,7 @@ implicit none
     close(unit=12)
     ntoverlap=MAX(CEILING(MAXVAL(travelp)/dt)+ntpwd,CEILING(MAXVAL(travels)/dt)+ntswd)+1
     if (migtp==0) then
-      ! using both P- and S-phases and MCM
+      ! using both P- and S-phases and MCM, three component data
       migplan=3
       ! calculate the number of effective station groups used in the migration
       CALL combnum(nre,mcmdim,ncoe)
@@ -140,7 +140,7 @@ implicit none
   nst0=INT((tdatal-ntoverlap*dt)/dt0)+1
 
   ! allocate matrixs
-  allocate(st0(nst0),wfdata(ntsload,nre),migvol_3d(nsr))
+  allocate(st0(nst0),zwfdata(ntsload,nre),migvol_3d(nsr))
 
   ! determine the searching origin times
   forall (idxt=1:nst0) st0(idxt)=(idxt-1)*dt0
@@ -170,180 +170,34 @@ implicit none
 
   ! read input data, the size of the whole dataset is nre*ntdata. Note the storage sequence of the data should first be 'station', then the 'time'.
   ! steam I/O
-  open(unit=13,file=TRIM(infname)//TRIM(dfname),form='unformatted',status='old',access='stream',action='read')
+  open(unit=13,file=TRIM(infname)//TRIM(dfname)//'.z',form='unformatted',status='old',access='stream',action='read')
+  open(unit=14,file=TRIM(infname)//TRIM(dfname)//'.n',form='unformatted',status='old',access='stream',action='read')
+  open(unit=15,file=TRIM(infname)//TRIM(dfname)//'.e',form='unformatted',status='old',access='stream',action='read')
 
   ! staring migration and location according to different migration plan
-  select case(migplan)
-
-  case(1)
     ! migration plan: single phase and MCM
     do iload=1,nloadd
       if (iload<nloadd) then
-        allocate(sdatain(nre,ntsload))
+        allocate(zsdatain(nre,ntsload),nsdatain(nre,ntsload),esdatain(nre,ntsload))
       else
         ! different memory allocation for the 'iload=nloadd' case
         if (ntmod>0) then
-          deallocate(wfdata)
-          allocate(sdatain(nre,ntmod),wfdata(ntmod,nre))
+          deallocate(zwfdata,nwfdata,ewfdata)
+          allocate(zsdatain(nre,ntmod),nsdatain(nre,ntmod),esdatain(nre,ntmod),zwfdata(ntmod,nre),nwfdata(ntmod,nre),ewfdata(ntmod,nre))
         else
-          deallocate(wfdata)
-          allocate(sdatain(nre,nt),wfdata(nt,nre))
+          deallocate(zwfdata,nwfdata,ewfdata)
+          allocate(zsdatain(nre,nt),nsdatain(nre,nt),esdatain(nre,nt),zwfdata(nt,nre),nwfdata(nt,nre),ewfdata(nt,nre))
         endif
       endif
       ! read the current data segment, note we set the position of the loading data segment
-      read(13,POS=RLP*(iload-1)*nt+1) sdatain
+      read(13,POS=RLP*(iload-1)*nt+1) zsdatain
+      read(14,POS=RLP*(iload-1)*nt+1) nsdatain
+      read(15,POS=RLP*(iload-1)*nt+1) esdatain
       ! transpose the matrix, change the storage sequence to accelerate the calculation
-      wfdata=TRANSPOSE(sdatain)
-      deallocate(sdatain)
-
-      ! calculate the characteristic function used for migration
-      if (cfuntp/=0) then
-        dimloadd=SHAPE(wfdata)
-        ! use CFs to do migration
-        CALL calcharfun(wfdata,dimloadd,cfuntp)
-      endif
-
-      ! allocate memory
-      nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
-      allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
-      ! the searching origin times for the current loading dataset
-      pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
-
-      ! migration and imaging
-      do it=1,nntld
-        do id=1,nsr
-          ! calculate the starting time points for migration
-          tvtn=NINT((travelt(id,:)+pst0(it)-btime(iload))/dt)+1
-          ! extract the waveforms
-          forall (ir=1:nre)
-            wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
-          endforall
-          ! calculate the stacking value of this imaging point
-          CALL stkcorrcoef(ntwd,nre,wfex,ncoe,stkv)
-          migvol_3d(id)=stkv
-        enddo
-        ! find potential source locations in 3D space domain for a particular origin time
-        CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
-      enddo
-
-      ! calculate total number of potential seismic events for all searching origin times
-      nnpse=SUM(npsit)
-      if (nnpse>0) then
-        ! allocate memory for saving information of real seismic events
-        allocate(seisinfo(5*nnpse))
-        ! find locations of seismic events that fullfill the time limit
-        CALL eventidf_stm(nssot,nntld,event_sp,event_mv,npsit,timelim,spaclim,dt0,pst0,nnpse,seisinfo,nsevt(iload),nenpro(iload))
-        write(opname,*) iload
-        open(unit=66,file=TRIM(outfname)//TRIM(ADJUSTL(opname)),form='unformatted',status='replace',access='stream',action='write')
-        write(66) seisinfo(1:(5*nsevt(iload)))
-        close(unit=66)
-        deallocate(seisinfo)
-      else
-        ! no seismic events in this loading time period, no output
-        nsevt(iload)=0
-        nenpro(iload)=0
-      endif
-      deallocate(pst0,npsit,event_sp,event_mv)
-    enddo
-
-  case(2)
-    ! migration plan: single phase and conventional DSI
-    do iload=1,nloadd
-      if (iload<nloadd) then
-        allocate(sdatain(nre,ntsload))
-      else
-        ! different memory allocation for the 'iload=nloadd' case
-        if (ntmod>0) then
-          deallocate(wfdata)
-          allocate(sdatain(nre,ntmod),wfdata(ntmod,nre))
-        else
-          deallocate(wfdata)
-          allocate(sdatain(nre,nt),wfdata(nt,nre))
-        endif
-      endif
-      ! read the current data segment, note we set the position of the loading data segment
-      read(13,POS=RLP*(iload-1)*nt+1) sdatain
-      ! transpose the matrix, change the storage sequence to accelerate the calculation
-      wfdata=TRANSPOSE(sdatain)
-      deallocate(sdatain)
-
-      ! calculate the characteristic function used for migration
-      if (cfuntp/=0) then
-        dimloadd=SHAPE(wfdata)
-        ! use CFs to do migration
-        CALL calcharfun(wfdata,dimloadd,cfuntp)
-      endif
-
-      ! allocate memory
-      nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
-      allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
-      ! the searching origin times for the current loading dataset
-      pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
-
-      ! migration and imaging
-      do it=1,nntld
-        do id=1,nsr
-          ! calculate the starting time points for migration
-          tvtn=NINT((travelt(id,:)+pst0(it)-btime(iload))/dt)+1
-          ! extract the waveforms
-          forall (ir=1:nre)
-            wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
-          endforall
-          ! calculate the stacking value of this imaging point
-          stkv=SUM(wfex)/ncoe
-          migvol_3d(id)=stkv
-        enddo
-        ! find potential source locations in 3D space domain for a particular origin time
-        CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
-      enddo
-
-      ! calculate total number of potential seismic events for all searching origin times
-      nnpse=SUM(npsit)
-      if (nnpse>0) then
-        ! allocate memory for saving information of real seismic events
-        allocate(seisinfo(5*nnpse))
-        ! find locations of seismic events that fullfill the time limit
-        CALL eventidf_stm(nssot,nntld,event_sp,event_mv,npsit,timelim,spaclim,dt0,pst0,nnpse,seisinfo,nsevt(iload),nenpro(iload))
-        write(opname,*) iload
-        open(unit=66,file=TRIM(outfname)//TRIM(ADJUSTL(opname)),form='unformatted',status='replace',access='stream',action='write')
-        write(66) seisinfo(1:(5*nsevt(iload)))
-        close(unit=66)
-        deallocate(seisinfo)
-      else
-        ! no seismic events in this loading time period, no output
-        nsevt(iload)=0
-        nenpro(iload)=0
-      endif
-      deallocate(pst0,npsit,event_sp,event_mv)
-    enddo
-
-  case(3)
-    ! migration plan: both P- and S-phases and MCM
-    do iload=1,nloadd
-      if (iload<nloadd) then
-        allocate(sdatain(nre,ntsload))
-      else
-        ! different memory allocation for the 'iload=nloadd' case
-        if (ntmod>0) then
-          deallocate(wfdata)
-          allocate(sdatain(nre,ntmod),wfdata(ntmod,nre))
-        else
-          deallocate(wfdata)
-          allocate(sdatain(nre,nt),wfdata(nt,nre))
-        endif
-      endif
-      ! read the current data segment, note we set the position of the loading data segment
-      read(13,POS=RLP*(iload-1)*nt+1) sdatain
-      ! transpose the matrix, change the storage sequence to accelerate the calculation
-      wfdata=TRANSPOSE(sdatain)
-      deallocate(sdatain)
-
-      ! calculate the characteristic function used for migration
-      if (cfuntp/=0) then
-        dimloadd=SHAPE(wfdata)
-        ! use CFs to do migration
-        CALL calcharfun(wfdata,dimloadd,cfuntp)
-      endif
+      zwfdata=TRANSPOSE(zsdatain)
+      nwfdata=TRANSPOSE(nsdatain)
+      ewfdata=TRANSPOSE(esdatain)
+      deallocate(zsdatain,nsdatain,esdatain)
 
       ! allocate memory
       nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
@@ -353,6 +207,7 @@ implicit none
 
       ! migration and imaging
       ! both P- and S-phases
+      !$OMP PARALLEL DO PRIVATE(it,id,ir,tvpn,tvsn,zwfex,nwfex,ewfex,stkz,stkn,stke,migvol_3d) SCHEDULE(DYNAMIC)
       do it=1,nntld
         do id=1,nsr
           ! calculate the starting time points for migration
@@ -360,17 +215,20 @@ implicit none
           tvsn=NINT((travels(id,:)+pst0(it)-btime(iload))/dt)+1
           ! extract the waveforms
           forall (ir=1:nre)
-            pwfex(:,ir)=wfdata(tvpn(ir):(tvpn(ir)+ntpwd-1),ir)
-            swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
+            zwfex(:,ir)=zwfdata(tvpn(ir):(tvpn(ir)+ntpwd-1),ir)
+            nwfex(:,ir)=nwfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
+            ewfex(:,ir)=ewfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
           endforall
           ! calculate the stacking value of this imaging point
-          CALL stkcorrcoef(ntpwd,nre,pwfex,ncoe,stkp)
-          CALL stkcorrcoef(ntswd,nre,swfex,ncoe,stks)
-          migvol_3d(id)=0.5*(stkp+stks)
+          CALL stkcorrcoef(ntpwd,nre,zwfex,ncoe,stkz)
+          CALL stkcorrcoef(ntswd,nre,nwfex,ncoe,stkn)
+          CALL stkcorrcoef(ntswd,nre,ewfex,ncoe,stke)
+          migvol_3d(id)=0.5*stkz+0.25*(stkn+stke)
         enddo
         ! find potential source locations in 3D space domain for a particular origin time
         CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
       enddo
+      !$OMP END PARALLEL DO
 
       ! calculate total number of potential seismic events for all searching origin times
       nnpse=SUM(npsit)
@@ -392,92 +250,18 @@ implicit none
       deallocate(pst0,npsit,event_sp,event_mv)
     enddo
 
-  case(4)
-    ! migration plan: both P- and S-phases and conventional DSI
-    do iload=1,nloadd
-      if (iload<nloadd) then
-        allocate(sdatain(nre,ntsload))
-      else
-        ! different memory allocation for the 'iload=nloadd' case
-        if (ntmod>0) then
-          deallocate(wfdata)
-          allocate(sdatain(nre,ntmod),wfdata(ntmod,nre))
-        else
-          deallocate(wfdata)
-          allocate(sdatain(nre,nt),wfdata(nt,nre))
-        endif
-      endif
-      ! read the current data segment, note we set the position of the loading data segment
-      read(13,POS=RLP*(iload-1)*nt+1) sdatain
-      ! transpose the matrix, change the storage sequence to accelerate the calculation
-      wfdata=TRANSPOSE(sdatain)
-      deallocate(sdatain)
-
-      ! calculate the characteristic function used for migration
-      if (cfuntp/=0) then
-        dimloadd=SHAPE(wfdata)
-        ! use CFs to do migration
-        CALL calcharfun(wfdata,dimloadd,cfuntp)
-      endif
-
-      ! allocate memory
-      nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
-      allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
-      ! the searching origin times for the current loading dataset
-      pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
-
-      ! migration and imaging
-      ! both P- and S-phases
-      do it=1,nntld
-        do id=1,nsr
-          ! calculate the starting time points for migration
-          tvpn=NINT((travelp(id,:)+pst0(it)-btime(iload))/dt)+1
-          tvsn=NINT((travels(id,:)+pst0(it)-btime(iload))/dt)+1
-          ! extract the waveforms
-          forall (ir=1:nre)
-            pwfex(:,ir)=wfdata(tvpn(ir):(tvpn(ir)+ntpwd-1),ir)
-            swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
-          endforall
-          ! calculate the stacking value of this imaging point
-          stkp=SUM(pwfex)/ncoe
-          stks=SUM(swfex)/ncoe
-          migvol_3d(id)=0.5*(stkp+stks)
-        enddo
-        ! find potential source locations in 3D space domain for a particular origin time
-        CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))
-      enddo
-
-      ! calculate total number of potential seismic events for all searching origin times
-      nnpse=SUM(npsit)
-      if (nnpse>0) then
-        ! allocate memory for saving information of real seismic events
-        allocate(seisinfo(5*nnpse))
-        ! find locations of seismic events that fullfill the time limit
-        CALL eventidf_stm(nssot,nntld,event_sp,event_mv,npsit,timelim,spaclim,dt0,pst0,nnpse,seisinfo,nsevt(iload),nenpro(iload))
-        write(opname,*) iload
-        open(unit=66,file=TRIM(outfname)//TRIM(ADJUSTL(opname)),form='unformatted',status='replace',access='stream',action='write')
-        write(66) seisinfo(1:(5*nsevt(iload)))
-        close(unit=66)
-        deallocate(seisinfo)
-      else
-        ! no seismic events in this loading time period, no output
-        nsevt(iload)=0
-        nenpro(iload)=0
-      endif
-      deallocate(pst0,npsit,event_sp,event_mv)
-    enddo
-
-  end select
   close(unit=13)
+  close(unit=14)
+  close(unit=15)
 
   ! deallocate memory
-  deallocate(wfdata,soupos,migvol_3d,st0,s0idsg,btime)
+  deallocate(zwfdata,nwfdata,ewfdata,soupos,migvol_3d,st0,s0idsg,btime)
   if (phasetp==0 .OR. phasetp==1) then
     ! only single phase is used in the migration
     deallocate(travelt,tvtn,wfex)
   else
     ! both P- and S-phases are used in the migration
-    deallocate(travelp,travels,tvpn,tvsn,pwfex,swfex)
+    deallocate(travelp,travels,tvpn,tvsn,zwfex,nwfex,ewfex)
   endif
 
   ! load results of all data segments and combine them to form the final results
