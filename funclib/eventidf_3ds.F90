@@ -52,47 +52,60 @@ implicit none
     ! migration values of all grid positions are below threshold, no seismic event.
     RETURN
   else
-    allocate(mvseis(nseis),spseis(nseis,3),indx(nseis))
-    ii=1
-    do id=1,nsr
-      if (migvol_3d(id)>=veset) then
-        mvseis(ii)=migvol_3d(id)
-        spseis(ii,:)=soupos(id,:)
-        ii=ii+1
-      endif
-    enddo
-
-    ! sort the migration values in ascending order, note is in ascending order.
-    CALL hpsort_eps_epw(nseis,mvseis,indx,1E-5)
-    ! identify seismic events that satisfy the pre-set space limit
-    event_sp(1:3)=spseis(indx(nseis),:)
-    event_mv(1)=mvseis(nseis)
-    npsit=1
-    do ii=nseis-1,1,-1
-      pepos=spseis(indx(ii),:)
-      do id=1,npsit
-        pflag=1
-        dist=SQRT(SUM((pepos-event_sp((3*id-2):(3*id)))**2))
-        if (dist<=spaclim) then
-          ! within the distance limit, not a qualified seismic event.
-          pflag=0
-          EXIT
+    if (nssot==1) then
+      ! only one event is dentified for this migration volume
+      allocate(indx(1))
+      indx=MAXLOC(migvol_3d)
+      npsit=1
+      event_sp(1:3)=soupos(indx(1),:)
+      event_mv(1)=migvol_3d(indx(1))
+      deallocate(indx)
+    else
+      ! need to identify more than one event
+      allocate(mvseis(nseis),spseis(nseis,3),indx(nseis))
+      ii=0
+      do id=1,nsr
+        if (migvol_3d(id)>=veset) then
+          ii=ii+1
+          mvseis(ii)=migvol_3d(id)
+          spseis(ii,:)=soupos(id,:)
         endif
       enddo
 
-      if (pflag==1) then
-        ! fullfill the distance limit, add a new seismic event
-        npsit=npsit+1
-        event_sp((3*npsit-2):(3*npsit))=pepos
-        event_mv(npsit)=mvseis(ii)
-        if (npsit==nssot) then
-          ! reach the maximum number of events, return to the main program
-          RETURN
-        endif
-      endif
-    enddo
+      ! sort the migration values in ascending order, note is in ascending order.
+      CALL hpsort_eps_epw(nseis,mvseis,indx,1E-5)
+    
+      ! the point with maximum migration value certainly should be an seismic event
+      event_sp(1:3)=spseis(indx(nseis),:)
+      event_mv(1)=mvseis(nseis)
+      npsit=1
 
-    deallocate(mvseis,spseis,indx)
+      ! identify seismic events that satisfy the pre-set space limit
+      do ii=nseis-1,1,-1
+        pepos=spseis(indx(ii),:)
+        pflag=1
+        do id=1,npsit
+          dist=SQRT(SUM((pepos-event_sp((3*id-2):(3*id)))**2))
+          if (dist<=spaclim) then
+            ! within the distance limit, not a qualified seismic event.
+            pflag=0
+            EXIT
+          endif
+        enddo
+
+        if (pflag==1) then
+          ! fullfill the distance limit, add a new seismic event
+          npsit=npsit+1
+          event_sp((3*npsit-2):(3*npsit))=pepos
+          event_mv(npsit)=mvseis(ii)
+          if (npsit==nssot) then
+            ! reach the maximum number of events, return to the main program
+            RETURN
+          endif
+        endif
+      enddo
+      deallocate(mvseis,spseis,indx)
+    endif
 
   endif
 

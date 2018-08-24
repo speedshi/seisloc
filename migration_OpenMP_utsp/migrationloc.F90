@@ -4,15 +4,14 @@ program migrationloc
 use paramod
 implicit none
 
-  integer(kind=INP) :: migtp,phasetp,cfuntp,nre,nsr,ntdata,ntpwd,ntswd,ntwd,nssot,nt,ntsload,ntmod,nloadd,nst0,nps
-  integer(kind=INP) :: iload,idxt,id,it,ir,ii,jj,dimloadd(2),ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
+  integer(kind=INP) :: migtp,phasetp,cfuntp,nre,nsr,ntdata,ntpwd,ntswd,ntwd,nssot,nt,ntsload,ntmod,nloadd,nst0
+  integer(kind=INP) :: iload,idxt,id,it,ir,ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
   integer(kind=INP) :: time_array_s(8), time_array_e(8)
-  character(20)     :: dfname,opname,infname,outfname
-  real(kind=RLP)    :: dt,tdatal,tpwind,tswind,dt0,vthrd,ncoe,stkv,stkz,stkn,stke,spaclim,timelim,twallc
-  integer(kind=INP),allocatable             :: s0idsg(:),npsit(:),nsevt(:),nenpro(:)
+  character(100)    :: dfname,opname,infname,outfname
+  real(kind=RLP)    :: dt,tdatal,tpwind,tswind,dt0,vthrd,ncoe,stkz,stkn,stke,spaclim,timelim,twallc
+  integer(kind=INP),allocatable             :: tvtn(:),tvpn(:),tvsn(:),s0idsg(:),npsit(:),nsevt(:),nenpro(:)
   real(kind=RLP),allocatable,dimension(:,:) :: soupos,travelt,travelp,travels,zsdatain,nsdatain,esdatain,zwfdata,nwfdata,ewfdata,wfex,zwfex,nwfex,ewfex,event_sp,event_mv,seiseloc
-  real(kind=RLP),allocatable,dimension(:)   :: st0,btime,tvtn,tvpn,tvsn,migvol_3d,pst0,seisinfo,eventsloc
-  logical                                   :: alive
+  real(kind=RLP),allocatable,dimension(:)   :: st0,btime,migvol_3d,pst0,seisinfo,eventsloc
 
   ! start timing. Wall-clock time, program must run in the same month
   call date_and_time(values=time_array_s)
@@ -20,10 +19,7 @@ implicit none
   ! set or create the folder name for input and output
   infname="./data/"
   outfname="./results/"
-  INQUIRE(DIRECTORY=TRIM(outfname),exist=alive)
-  if (.not. alive) then
-    CALL system("mkdir "//TRIM(outfname))
-  endif
+  CALL system("mkdir "//TRIM(outfname))
 
   ! read in migration parameters
   open(unit=100,file=TRIM(infname)//'migpara.dat')
@@ -140,7 +136,7 @@ implicit none
   nst0=INT((tdatal-ntoverlap*dt)/dt0)+1
 
   ! allocate matrixs
-  allocate(st0(nst0),zwfdata(ntsload,nre),migvol_3d(nsr))
+  allocate(st0(nst0),zwfdata(ntsload,nre),nwfdata(ntsload,nre),ewfdata(ntsload,nre),migvol_3d(nsr))
 
   ! determine the searching origin times
   forall (idxt=1:nst0) st0(idxt)=(idxt-1)*dt0
@@ -223,7 +219,7 @@ implicit none
           CALL stkcorrcoef(ntpwd,nre,zwfex,ncoe,stkz)
           CALL stkcorrcoef(ntswd,nre,nwfex,ncoe,stkn)
           CALL stkcorrcoef(ntswd,nre,ewfex,ncoe,stke)
-          migvol_3d(id)=0.5*stkz+0.25*(stkn+stke)
+          migvol_3d(id)=0.6*stkz+0.2*(stkn+stke)
         enddo
         ! find potential source locations in 3D space domain for a particular origin time
         CALL eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp(1,it),event_mv(1,it),npsit(it))

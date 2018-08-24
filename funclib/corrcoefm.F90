@@ -9,7 +9,7 @@ implicit none
   real(kind=RLP),intent(in)          :: X(n,m)
   real(kind=RLP),intent(out)         :: R(m,m)
   integer(kind=INP)                  :: i
-  real(kind=8)                       :: Xm(m),Xrm(n,m),Xdev(m,1)
+  real(kind=RLP)                     :: Xm(m),Xrm(n,m),Xdev(m,1)
 
   ! calculate the mean values of each variables
   Xm=sum(X,1)/n

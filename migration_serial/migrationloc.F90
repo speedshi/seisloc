@@ -4,15 +4,14 @@ program migrationloc
 use paramod
 implicit none
 
-  integer(kind=INP) :: migtp,phasetp,cfuntp,nre,nsr,ntdata,ntpwd,ntswd,ntwd,nssot,nt,ntsload,ntmod,nloadd,nst0,nps
-  integer(kind=INP) :: iload,idxt,id,it,ir,ii,jj,dimloadd(2),ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
+  integer(kind=INP) :: migtp,phasetp,cfuntp,nre,nsr,ntdata,ntpwd,ntswd,ntwd,nssot,nt,ntsload,ntmod,nloadd,nst0
+  integer(kind=INP) :: iload,idxt,id,it,ir,dimloadd(2),ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
   integer(kind=INP) :: time_array_s(8), time_array_e(8)
-  character(20)     :: dfname,opname,infname,outfname
+  character(100)    :: dfname,opname,infname,outfname
   real(kind=RLP)    :: dt,tdatal,tpwind,tswind,dt0,vthrd,ncoe,stkv,stkp,stks,spaclim,timelim,twallc
-  integer(kind=INP),allocatable             :: s0idsg(:),npsit(:),nsevt(:),nenpro(:)
+  integer(kind=INP),allocatable             :: tvtn(:),tvpn(:),tvsn(:),s0idsg(:),npsit(:),nsevt(:),nenpro(:)
   real(kind=RLP),allocatable,dimension(:,:) :: soupos,travelt,travelp,travels,sdatain,wfdata,wfex,pwfex,swfex,event_sp,event_mv,seiseloc
-  real(kind=RLP),allocatable,dimension(:)   :: st0,btime,tvtn,tvpn,tvsn,migvol_3d,pst0,seisinfo,eventsloc
-  logical                                   :: alive
+  real(kind=RLP),allocatable,dimension(:)   :: st0,btime,migvol_3d,pst0,seisinfo,eventsloc
 
   ! start timing. Wall-clock time, program must run in the same month
   call date_and_time(values=time_array_s)
@@ -20,10 +19,7 @@ implicit none
   ! set or create the folder name for input and output
   infname="./data/"
   outfname="./results/"
-  INQUIRE(DIRECTORY=TRIM(outfname),exist=alive)
-  if (.not. alive) then
-    CALL system("mkdir "//TRIM(outfname))
-  endif
+  CALL system("mkdir "//TRIM(outfname))
 
   ! read in migration parameters
   open(unit=100,file=TRIM(infname)//'migpara.dat')

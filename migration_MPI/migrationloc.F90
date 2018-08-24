@@ -5,31 +5,31 @@ use mpi
 use paramod
 implicit none
 
-  integer(kind=INP) :: migtp,phasetp,cfuntp,nre,nsr,ntdata,ntpwd,ntswd,ntwd,nssot,nt,ntsload,ntmod,nloadd,nst0,nps
-  integer(kind=INP) :: iload,idxt,id,it,ir,ii,jj,dimloadd(2),ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
-  integer(kind=INP) :: time_array_s(8),time_array_e(8),ierror,npsize,irank,rntemp
-  character(20)     :: dfname,opname,infname,outfname
+  integer(kind=INP) :: migtp,phasetp,cfuntp,nre,nsr,ntdata,ntpwd,ntswd,ntwd,nssot,nt,ntsload,ntmod,nloadd,nst0
+  integer(kind=INP) :: iload,idxt,id,it,ir,ii,dimloadd(2),ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
+  integer(kind=INP) :: time_array_s(8),time_array_e(8),rntemp
+  character(100)    :: dfname,opname,infname,outfname
   real(kind=RLP)    :: dt,tdatal,tpwind,tswind,dt0,vthrd,ncoe,stkv,stkp,stks,spaclim,timelim,twallc
-  integer(kind=INP),allocatable             :: s0idsg(:),npsit(:),nsevt(:),nenpro(:),cnumpp(:),cidxpp(:)
+  integer(kind=INP),allocatable             :: tvtn(:),tvpn(:),tvsn(:),s0idsg(:),npsit(:),nsevt(:),nenpro(:),cnumpp(:),cidxpp(:)
   real(kind=RLP),allocatable,dimension(:,:) :: soupos,travelt,travelp,travels,sdatain,wfdata,wfex,pwfex,swfex,event_sp,event_mv,seiseloc
-  real(kind=RLP),allocatable,dimension(:)   :: st0,btime,tvtn,tvpn,tvsn,migvol_3d,pst0,seisinfo,eventsloc
-  logical                                   :: alive,ldparal,t0paral
+  real(kind=RLP),allocatable,dimension(:)   :: st0,btime,migvol_3d,pst0,seisinfo,eventsloc
+  logical                                   :: ldparal,t0paral
+  integer(kind=4)   :: ierror,npsize,irank
 
   ! Start MPI parallel, obtain the number of processors and the rank of each processor
   call MPI_INIT(ierror)
   call MPI_COMM_SIZE(MPI_COMM_WORLD,npsize,ierror)
   call MPI_COMM_RANK(MPI_COMM_WORLD,irank,ierror)
 
+  ! set the folder name for input and output
+  infname="./data/"
+  outfname="./results/"
+
   if (irank==0) then
     ! start timing. Wall-clock time, program must run in the same month
     call date_and_time(values=time_array_s)
-  endif
 
-  ! set or create the folder name for input and output
-  infname="./data/"
-  outfname="./results/"
-  INQUIRE(DIRECTORY=TRIM(outfname),exist=alive)
-  if (.not. alive) then
+    ! create the folder name for input and output
     CALL system("mkdir "//TRIM(outfname))
   endif
 
@@ -367,12 +367,12 @@ implicit none
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
           if (irank/=0) then
-            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           else
-            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           endif
 
@@ -394,9 +394,9 @@ implicit none
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
             if (irank/=0) then
-              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             else
-              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             endif
             
             if (irank==0) then
@@ -586,12 +586,12 @@ implicit none
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
           if (irank/=0) then
-            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           else
-            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           endif
 
@@ -613,9 +613,9 @@ implicit none
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
             if (irank/=0) then
-              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             else
-              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             endif
 
             if (irank==0) then
@@ -813,12 +813,12 @@ implicit none
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
           if (irank/=0) then
-            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           else
-            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           endif
 
@@ -843,9 +843,9 @@ implicit none
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
             if (irank/=0) then
-              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             else
-              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             endif
 
             if (irank==0) then
@@ -1043,12 +1043,12 @@ implicit none
           ! communication between processors
           ! processor 0 collect the parameters: event_sp, event_mv and npsit
           if (irank/=0) then
-            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_sp(1,cidxpp(irank)),3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(event_mv(1,cidxpp(irank)),nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(npsit(cidxpp(irank)),cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           else
-            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
-            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,3*nssot*cnumpp(irank),MPI_REAL8,event_sp,3*nssot*cnumpp,3*nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
+            call MPI_GATHERV(MPI_IN_PLACE,nssot*cnumpp(irank),MPI_REAL8,event_mv,nssot*cnumpp,nssot*(cidxpp(0:npsize-1)-1),MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_INTEGER,npsit,cnumpp,cidxpp(0:npsize-1)-1,MPI_INTEGER,0,MPI_COMM_WORLD,ierror)
           endif
 
@@ -1073,9 +1073,9 @@ implicit none
             ! communication between processors
             ! processor 0 collect the parameter: migvol_3d
             if (irank/=0) then
-              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(migvol_3d(cidxpp(irank)),cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             else
-              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL,0,MPI_COMM_WORLD,ierror)
+              call MPI_GATHERV(MPI_IN_PLACE,cnumpp(irank),MPI_REAL8,migvol_3d,cnumpp,cidxpp(0:npsize-1)-1,MPI_REAL8,0,MPI_COMM_WORLD,ierror)
             endif
 
             if (irank==0) then

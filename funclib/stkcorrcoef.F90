@@ -11,7 +11,7 @@ implicit none
   real(kind=RLP),intent(in)          :: ncoe,data(ntwd,nre)
   real(kind=RLP),intent(out)         :: stkval
   integer(kind=INP)                  :: ii,jj,nps
-  real(kind=8)                       :: RCC(nre,nre),Xm(nre),Xrm(ntwd,nre),Xdev(nre,1)
+  real(kind=RLP)                     :: RCC(nre,nre),Xm(nre),Xrm(ntwd,nre),Xdev(nre,1)
 
   ! calculate the mean values of each variables
   Xm=sum(data,1)/ntwd
