@@ -1,0 +1,7 @@
+# Object files and binaries
+*.dSYM
+*.mod
+*.o
+migrationloc
+# System files
+.directory
