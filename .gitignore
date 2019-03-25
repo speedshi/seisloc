@@ -2,6 +2,7 @@
 *.dSYM
 *.mod
 *.o
-migrationloc
+bin/*
+obj/*
 # System files
 .directory
