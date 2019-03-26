@@ -14,7 +14,7 @@ The following files are used as input to `migrationloc`.  Their names are hard-c
 
 All the input files are stored in the folder `./data`. Double precision is normally used.
 
-1. `migpara.dat`, format: text file. This file contains key parameters (such as the number of stations, time window length and characteristic function type) adopted in `migrationloc`. Detailed information can be found in the [provided example file](../migpara.dat), or in the [section below](#migration-parameter-file-migpara.dat)
+1. `migpara.dat`, format: text file. This file contains key parameters (such as the number of stations, time window length and characteristic function type) adopted in `migrationloc`. Detailed information can be found in the [provided example file](../migpara.dat), or in the [section below](#migration-parameter-file-migparadat)
 
 2. `soupos.dat`, format: binary file. This file contains the position information of all the imaging points. The data unit: meter, size: `nsr*3*precision` byte.
    It contains the X, Y and Z coordinates of all the potential source points (imaging points). First is the X coordinates of all the potential source points, then is the Y coordinates of all the potential source points, last is the Z coordinates of all the potential source points (format detail shown in  Figure 1). The storage order of all the source points much keep consistent with the traveltime table file. The number of source points must be same as described in the `migpara.dat` file.
