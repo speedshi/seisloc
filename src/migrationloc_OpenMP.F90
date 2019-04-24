@@ -188,6 +188,7 @@ implicit none
       endif
       ! read the current data segment, note we set the position of the loading data segment
       read(13,POS=RLP*(iload-1)*nt*nre+1) sdatain
+      rewind(13)
       ! transpose the matrix, change the storage sequence to accelerate the calculation
       wfdata=TRANSPOSE(sdatain)
       deallocate(sdatain)
@@ -261,6 +262,7 @@ implicit none
       endif
       ! read the current data segment, note we set the position of the loading data segment
       read(13,POS=RLP*(iload-1)*nt*nre+1) sdatain
+      rewind(13)
       ! transpose the matrix, change the storage sequence to accelerate the calculation
       wfdata=TRANSPOSE(sdatain)
       deallocate(sdatain)
@@ -334,6 +336,7 @@ implicit none
       endif
       ! read the current data segment, note we set the position of the loading data segment
       read(13,POS=RLP*(iload-1)*nt*nre+1) sdatain
+      rewind(13)
       ! transpose the matrix, change the storage sequence to accelerate the calculation
       wfdata=TRANSPOSE(sdatain)
       deallocate(sdatain)
@@ -411,6 +414,7 @@ implicit none
       endif
       ! read the current data segment, note we set the position of the loading data segment
       read(13,POS=RLP*(iload-1)*nt*nre+1) sdatain
+      rewind(13)
       ! transpose the matrix, change the storage sequence to accelerate the calculation
       wfdata=TRANSPOSE(sdatain)
       deallocate(sdatain)

@@ -187,8 +187,11 @@ implicit none
       endif
       ! read the current data segment, note we set the position of the loading data segment
       read(13,POS=RLP*(iload-1)*nt*nre+1) zsdatain
+      rewind(13)
       read(14,POS=RLP*(iload-1)*nt*nre+1) nsdatain
+      rewind(14)
       read(15,POS=RLP*(iload-1)*nt*nre+1) esdatain
+      rewind(15)
       ! transpose the matrix, change the storage sequence to accelerate the calculation
       zwfdata=TRANSPOSE(zsdatain)
       nwfdata=TRANSPOSE(nsdatain)
