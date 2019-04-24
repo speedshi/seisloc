@@ -7,7 +7,7 @@ subroutine eventidf_3ds(nsr,migvol_3d,soupos,vthrd,spaclim,nssot,event_sp,event_
 ! 'migvol_3d': migration volume of all source points for a particular searching origin time, nsr*1.
 ! 'soupos': spatial positions of all source points, X-Y-Z (m), nsr*3.
 ! 'vthrd': used to set threshold value (veset) for pick seismic events in the migration volume, migration_value>=veset are viewed as potential seismic events.
-!  If 0<vthrd<1, veset=vthrd; if vthrd<=0, veset=mean+3*std; if vthrd>=1, veset=mean+vthrd*std.
+!  If 0<=vthrd<1, veset=vthrd; if vthrd<0, veset=mean+3*std; if vthrd>=1, veset=mean+vthrd*std.
 ! 'spaclim': spatial limit to restrict identifying too close seismic events in space.
 ! 'nssot': the maximum number of seismic events we can identified in the migration volume.
 ! Output:--------------------------------------------------------------------------------
@@ -27,10 +27,10 @@ implicit none
   real(kind=RLP),allocatable    :: mvseis(:),spseis(:,:)
 
   ! check and set the threshold value
-  if (vthrd>0 .OR. vthrd<1) then
-    ! user defined threshold value, between 0 and 1
+  if (vthrd>=0 .AND. vthrd<1) then
+    ! user defined threshold value, between 0 and 1, [0, 1)
     veset=vthrd
-  elseif (vthrd<=0) then
+  elseif (vthrd<0) then
     ! adaptive threshold, use predefined default outlier indication
     mmean=SUM(migvol_3d)/nsr
     mstd=SQRT(SUM((migvol_3d-mmean)**2)/(nsr-1.0))
