@@ -192,18 +192,8 @@ implicit none
     cidxpp(0)=1
     forall (ii=1:npsize) cidxpp(ii)=SUM(cnumpp(0:(ii-1)))+1
   else
-    ! perform MPI parallel computing based on source grids
+    ! perform MPI parallel computing based on t0 or source grids
     ldparal=.false.
-    t0paral=.false.
-    ! calculate the number of assigned jobs per processor
-    cnumpp=INT(nsr/npsize)
-    rntemp=MOD(nsr,npsize)
-    if (rntemp>0) then
-      cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
-    endif
-    ! calculate the starting loop index for each processor
-    cidxpp(0)=1
-    forall (ii=1:npsize) cidxpp(ii)=SUM(cnumpp(0:(ii-1)))+1
   endif
 
   ! read input data, the size of the whole dataset is nre*ntdata. Note the storage sequence of the data should first be 'station', then the 'time'.
@@ -339,6 +329,18 @@ implicit none
           ! calculate the number of assigned jobs per processor
           cnumpp=INT(nntld/npsize)
           rntemp=MOD(nntld,npsize)
+          if (rntemp>0) then
+            cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
+          endif
+          ! calculate the starting loop index for each processor
+          cidxpp(0)=1
+          forall (ii=1:npsize) cidxpp(ii)=SUM(cnumpp(0:(ii-1)))+1
+        else
+          ! MPI based on source grids
+          t0paral=.false.
+          ! calculate the number of assigned jobs per processor
+          cnumpp=INT(nsr/npsize)
+          rntemp=MOD(nsr,npsize)
           if (rntemp>0) then
             cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
           endif
@@ -566,6 +568,18 @@ implicit none
           ! calculate the starting loop index for each processor
           cidxpp(0)=1
           forall (ii=1:npsize) cidxpp(ii)=SUM(cnumpp(0:(ii-1)))+1
+        else
+          ! MPI based on source grids
+          t0paral=.false.
+          ! calculate the number of assigned jobs per processor
+          cnumpp=INT(nsr/npsize)
+          rntemp=MOD(nsr,npsize)
+          if (rntemp>0) then
+            cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
+          endif
+          ! calculate the starting loop index for each processor
+          cidxpp(0)=1
+          forall (ii=1:npsize) cidxpp(ii)=SUM(cnumpp(0:(ii-1)))+1
         endif
 
         ! migration and imaging
@@ -785,6 +799,18 @@ implicit none
           ! calculate the number of assigned jobs per processor
           cnumpp=INT(nntld/npsize)
           rntemp=MOD(nntld,npsize)
+          if (rntemp>0) then
+            cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
+          endif
+          ! calculate the starting loop index for each processor
+          cidxpp(0)=1
+          forall (ii=1:npsize) cidxpp(ii)=SUM(cnumpp(0:(ii-1)))+1
+        else
+          ! MPI based on source grids
+          t0paral=.false.
+          ! calculate the number of assigned jobs per processor
+          cnumpp=INT(nsr/npsize)
+          rntemp=MOD(nsr,npsize)
           if (rntemp>0) then
             cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
           endif
@@ -1017,6 +1043,18 @@ implicit none
           ! calculate the number of assigned jobs per processor
           cnumpp=INT(nntld/npsize)
           rntemp=MOD(nntld,npsize)
+          if (rntemp>0) then
+            cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
+          endif
+          ! calculate the starting loop index for each processor
+          cidxpp(0)=1
+          forall (ii=1:npsize) cidxpp(ii)=SUM(cnumpp(0:(ii-1)))+1
+        else
+          ! MPI based on source grids
+          t0paral=.false.
+          ! calculate the number of assigned jobs per processor
+          cnumpp=INT(nsr/npsize)
+          rntemp=MOD(nsr,npsize)
           if (rntemp>0) then
             cnumpp(1:rntemp)=cnumpp(1:rntemp)+1
           endif
