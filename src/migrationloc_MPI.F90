@@ -166,6 +166,8 @@ implicit none
   ! calculate the starting time of each data segment (btime)
   ! calculate the starting index of origin times for each data segment (s0idsg)
   allocate(s0idsg(nloadd+1),btime(nloadd),nsevt(nloadd),nenpro(nloadd))
+  nsevt=0
+  nenpro=0
   btime(1)=0
   s0idsg(1)=1
   s0idsg(nloadd+1)=nst0+1
@@ -237,6 +239,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
@@ -319,6 +324,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
@@ -470,6 +478,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
@@ -552,6 +563,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
@@ -703,6 +717,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
@@ -789,6 +806,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
@@ -947,6 +967,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
@@ -1033,6 +1056,9 @@ implicit none
         ! allocate memory
         nntld=s0idsg(iload+1)-s0idsg(iload) ! number of searching origin times for the current loading dataset
         allocate(pst0(nntld),npsit(nntld),event_sp(3*nssot,nntld),event_mv(nssot,nntld))
+        npsit=0
+        event_sp=0
+        event_mv=0
         ! the searching origin times for the current loading dataset
         pst0=st0(s0idsg(iload):(s0idsg(iload+1)-1))
 
