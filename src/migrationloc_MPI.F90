@@ -15,6 +15,8 @@ implicit none
   real(kind=RLP),allocatable,dimension(:)   :: st0,btime,migvol_3d,pst0,seisinfo,eventsloc
   logical                                   :: ldparal,t0paral
   integer(kind=4)   :: ierror,npsize,irank
+  real(kind=RLP),allocatable                :: RCC(:,:),Xm(:),Xdev(:)
+  integer(kind=INP)                         :: iii,jjj,nps
 
   ! Start MPI parallel, obtain the number of processors and the rank of each processor
   call MPI_INIT(ierror)
@@ -52,7 +54,10 @@ implicit none
   read(100,*) timelim
   read(100,*) nssot
   close(unit=100)
- 
+
+  ! allocate the array for the 'stkcorrcoef1' subroutine
+  allocate(RCC(nre,nre),Xm(nre),Xdev(nre))
+
   ! determine the number of time points for the whole seismic data
   ntdata=NINT(tdatal/dt)+1
   ! determine the number of time points of the P- and S-phase time window used in the migration process. 
@@ -255,7 +260,7 @@ implicit none
               wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
             endforall
             ! calculate the stacking value of this imaging point
-            CALL stkcorrcoef(ntwd,nre,wfex,ncoe,stkv)
+            CALL stkcorrcoef1(ntwd,nre,wfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stkv)
             migvol_3d(id)=stkv
           enddo
           ! find potential source locations in 3D space domain for a particular origin time
@@ -369,7 +374,7 @@ implicit none
                 wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntwd,nre,wfex,ncoe,stkv)
+              CALL stkcorrcoef1(ntwd,nre,wfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stkv)
               migvol_3d(id)=stkv
             enddo
             ! find potential source locations in 3D space domain for a particular origin time
@@ -399,7 +404,7 @@ implicit none
                 wfex(:,ir)=wfdata(tvtn(ir):(tvtn(ir)+ntwd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntwd,nre,wfex,ncoe,stkv)
+              CALL stkcorrcoef1(ntwd,nre,wfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stkv)
               migvol_3d(id)=stkv
             enddo
 
@@ -736,8 +741,8 @@ implicit none
               swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
             endforall
             ! calculate the stacking value of this imaging point
-            CALL stkcorrcoef(ntpwd,nre,pwfex,ncoe,stkp)
-            CALL stkcorrcoef(ntswd,nre,swfex,ncoe,stks)
+            CALL stkcorrcoef1(ntpwd,nre,pwfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stkp)
+            CALL stkcorrcoef1(ntswd,nre,swfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stks)
             migvol_3d(id)=0.5*(stkp+stks)
           enddo
           ! find potential source locations in 3D space domain for a particular origin time
@@ -854,8 +859,8 @@ implicit none
                 swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntpwd,nre,pwfex,ncoe,stkp)
-              CALL stkcorrcoef(ntswd,nre,swfex,ncoe,stks)
+              CALL stkcorrcoef1(ntpwd,nre,pwfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stkp)
+              CALL stkcorrcoef1(ntswd,nre,swfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stks)
               migvol_3d(id)=0.5*(stkp+stks)
             enddo
             ! find potential source locations in 3D space domain for a particular origin time
@@ -887,8 +892,8 @@ implicit none
                 swfex(:,ir)=wfdata(tvsn(ir):(tvsn(ir)+ntswd-1),ir)
               endforall
               ! calculate the stacking value of this imaging point
-              CALL stkcorrcoef(ntpwd,nre,pwfex,ncoe,stkp)
-              CALL stkcorrcoef(ntswd,nre,swfex,ncoe,stks)
+              CALL stkcorrcoef1(ntpwd,nre,pwfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stkp)
+              CALL stkcorrcoef1(ntswd,nre,swfex,RCC,Xm,Xdev,ncoe,iii,jjj,nps,stks)
               migvol_3d(id)=0.5*(stkp+stks)
             enddo
 
