@@ -4,5 +4,6 @@ implicit none
 integer,parameter :: RLP=8 !precision for real number
 integer,parameter :: INP=4 !precision for integer number
 real(kind=RLP),parameter :: PI=3.141592653589793
+real(kind=RLP)    :: NAN=0.! NAN value
 
 end module paramod

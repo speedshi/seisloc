@@ -31,6 +31,9 @@ implicit none
     ! start timing. Wall-clock time, program must run in the same month
     call date_and_time(values=time_array_s)
 
+    ! set the NAN value
+    NAN=NAN/NAN
+
     ! create the folder name for input and output
     CALL system("mkdir "//TRIM(outfname))
   endif

@@ -28,6 +28,9 @@ implicit none
   ! set the low triangle part to be 0
   forall (ii=1:nre,jj=1:nre,ii>=jj) RCC(ii,jj)=0
 
+  ! set the infinite values to NAN; all values should be no larger than 1, otherwise are infinite values
+  where(ABS(RCC)>1) RCC=NAN
+
   ! count the number of NAN values in the correlation matrix
   nps=COUNT(ISNAN(RCC))
 
@@ -68,6 +71,9 @@ implicit none
   ! calculate the Pearson correlation coefficient matrix, only for up triangle part
   RCC=0
   forall (iii=1:nre,jjj=1:nre,iii<jjj) RCC(iii,jjj)=sum(data(:,iii)*data(:,jjj))/(Xdev(iii)*Xdev(jjj))
+
+  ! set the infinite values to NAN; all values should be no larger than 1, otherwise are infinite values
+  where(ABS(RCC)>1) RCC=NAN
 
   ! count the number of NAN values in the correlation matrix
   nps=COUNT(ISNAN(RCC))
