@@ -520,7 +520,7 @@ implicit none
   open(unit=100,file=TRIM(outfname)//'event_location.dat',form='formatted',status='replace',action='write')
   write(unit=100,fmt="(I8)") nnse
   do id=1,nnse
-    write(unit=100,fmt="(5(2XF18.6))") eventsloc((5*id-4):(5*id))
+    write(unit=100,fmt="(4(2XF18.6),2XE16.8E3)") eventsloc((5*id-4):(5*id))
   enddo
   close(unit=100)
 
