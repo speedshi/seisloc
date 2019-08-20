@@ -5,13 +5,14 @@ use paramod
 implicit none
 
   integer(kind=INP) :: migtp,phasetp,cfuntp,nre,nsr,ntdata,ntpwd,ntswd,ntwd,nssot,nt,ntsload,ntmod,nloadd,nst0
-  integer(kind=INP) :: iload,idxt,id,it,ir,ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse
+  integer(kind=INP) :: iload,idxt,id,it,ir,ntoverlap,mcmdim,migplan,nntld,nnpse,nsemax,nseall,nnse,s_load
   integer(kind=INP) :: time_array_s(8), time_array_e(8)
-  character(100)    :: dfname,opname,infname,outfname
+  character(100)    :: dfname,opname,infname,outfname,tempname
   real(kind=RLP)    :: dt,tdatal,tpwind,tswind,dt0,vthrd,ncoe,stkz,stkn,stke,spaclim,timelim,twallc
   integer(kind=INP),allocatable             :: tvtn(:),tvpn(:),tvsn(:),s0idsg(:),npsit(:),nsevt(:),nenpro(:)
   real(kind=RLP),allocatable,dimension(:,:) :: soupos,travelt,travelp,travels,zsdatain,nsdatain,esdatain,zwfdata,nwfdata,ewfdata,wfex,zwfex,nwfex,ewfex,event_sp,event_mv,seiseloc
   real(kind=RLP),allocatable,dimension(:)   :: st0,btime,migvol_3d,pst0,seisinfo,eventsloc
+  logical                                   :: file_existes
 
   ! start timing. Wall-clock time, program must run in the same month
   call date_and_time(values=time_array_s)
@@ -173,9 +174,20 @@ implicit none
   open(unit=14,file=TRIM(infname)//TRIM(dfname)//'.n',form='unformatted',status='old',access='stream',action='read')
   open(unit=15,file=TRIM(infname)//TRIM(dfname)//'.e',form='unformatted',status='old',access='stream',action='read')
 
+  ! check and determine start from which data segement
+  s_load=nloadd+1
+  do iload=1,nloadd
+    write(tempname,*) iload
+    INQUIRE(FILE=TRIM(outfname)//TRIM(ADJUSTL(tempname)),EXIST=file_exists)
+    if .NOT. (file_exists) then
+      s_load=iload
+      exit
+    endif
+  enddo
+
   ! staring migration and location according to different migration plan
     ! migration plan: single phase and MCM
-    do iload=1,nloadd
+    do iload=s_load,nloadd
       if (iload<nloadd) then
         allocate(zsdatain(nre,ntsload),nsdatain(nre,ntsload),esdatain(nre,ntsload))
       else
